@@ -3,51 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <title>Маникюр 💅</title>
+
 <style>
 body {
     font-family: Arial;
-    max-width: 600px;
-    margin: auto;
+    background: #fff0f5;
+    text-align: center;
 }
+
+.card {
+    background: white;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 10px;
+    display: inline-block;
+}
+
 button {
-    margin-left: 10px;
+    background: pink;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.admin {
+    margin-top: 30px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>Запись на маникюр 💅</h1>
+<h1>💅 Запись на маникюр</h1>
+
+<input type="date" id="date">
 
 <div id="slots"></div>
 
-<h2>Админ вход</h2>
+<div class="admin">
+<h2>Админ</h2>
 <input id="login" placeholder="логин">
-<input id="password" placeholder="пароль" type="password">
+<input id="password" type="password" placeholder="пароль">
 <button onclick="login()">Войти</button>
 
-<div id="admin" style="display:none;">
-    <h2>Админ панель</h2>
-    <input id="time" placeholder="Например: 25.04 14:00">
-    <button onclick="addSlot()">Добавить слот</button>
+<div id="adminPanel" style="display:none;">
+    <h3>Добавить слот</h3>
+    <input type="date" id="adminDate">
+    <input placeholder="Время (14:00)" id="time">
+    <button onclick="addSlot()">Добавить</button>
+</div>
 </div>
 
 <script>
 const API = "https://ТВОЙ-СЕРВЕР.onrender.com";
 
-// загрузка слотов
+let isAdmin = false;
+
+// загрузка
 async function loadSlots() {
     const res = await fetch(API + "/slots");
     const data = await res.json();
 
+    const selectedDate = document.getElementById("date").value;
+
     const container = document.getElementById("slots");
     container.innerHTML = "";
 
-    data.forEach(slot => {
+    data
+    .filter(s => !selectedDate || s.date === selectedDate)
+    .forEach(slot => {
         const div = document.createElement("div");
+        div.className = "card";
 
         div.innerHTML = `
-            ${slot.time}
-            ${slot.booked ? "(занято)" : `<button onclick="book(${slot.id})">Записаться</button>`}
+            <b>${slot.date}</b><br>
+            ${slot.time}<br>
+            ${slot.booked 
+                ? "❌ занято" 
+                : `<button onclick="book('${slot._id}')">Записаться</button>`
+            }
         `;
 
         container.appendChild(div);
@@ -82,7 +116,8 @@ async function login() {
     const data = await res.json();
 
     if (data.success) {
-        document.getElementById("admin").style.display = "block";
+        isAdmin = true;
+        document.getElementById("adminPanel").style.display = "block";
         alert("Вход выполнен");
     } else {
         alert("Ошибка");
@@ -91,16 +126,19 @@ async function login() {
 
 // добавить слот
 async function addSlot() {
+    const date = document.getElementById("adminDate").value;
     const time = document.getElementById("time").value;
 
     await fetch(API + "/add-slot", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ time })
+        body: JSON.stringify({ date, time })
     });
 
     loadSlots();
 }
+
+document.getElementById("date").addEventListener("change", loadSlots);
 
 loadSlots();
 </script>
