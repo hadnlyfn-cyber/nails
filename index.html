@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Маникюр 💅</title>
+<style>
+body {
+    font-family: Arial;
+    max-width: 600px;
+    margin: auto;
+}
+button {
+    margin-left: 10px;
+}
+</style>
+</head>
+<body>
+
+<h1>Запись на маникюр 💅</h1>
+
+<div id="slots"></div>
+
+<h2>Админ вход</h2>
+<input id="login" placeholder="логин">
+<input id="password" placeholder="пароль" type="password">
+<button onclick="login()">Войти</button>
+
+<div id="admin" style="display:none;">
+    <h2>Админ панель</h2>
+    <input id="time" placeholder="Например: 25.04 14:00">
+    <button onclick="addSlot()">Добавить слот</button>
+</div>
+
+<script>
+const API = "https://ТВОЙ-СЕРВЕР.onrender.com";
+
+// загрузка слотов
+async function loadSlots() {
+    const res = await fetch(API + "/slots");
+    const data = await res.json();
+
+    const container = document.getElementById("slots");
+    container.innerHTML = "";
+
+    data.forEach(slot => {
+        const div = document.createElement("div");
+
+        div.innerHTML = `
+            ${slot.time}
+            ${slot.booked ? "(занято)" : `<button onclick="book(${slot.id})">Записаться</button>`}
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// запись
+async function book(id) {
+    const name = prompt("Ваше имя:");
+    if (!name) return;
+
+    await fetch(API + "/book", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ id, name })
+    });
+
+    loadSlots();
+}
+
+// логин
+async function login() {
+    const login = document.getElementById("login").value;
+    const password = document.getElementById("password").value;
+
+    const res = await fetch(API + "/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ login, password })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        document.getElementById("admin").style.display = "block";
+        alert("Вход выполнен");
+    } else {
+        alert("Ошибка");
+    }
+}
+
+// добавить слот
+async function addSlot() {
+    const time = document.getElementById("time").value;
+
+    await fetch(API + "/add-slot", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ time })
+    });
+
+    loadSlots();
+}
+
+loadSlots();
+</script>
+
+</body>
+</html>
